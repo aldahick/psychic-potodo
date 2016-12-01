@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import net.alexhicks.psychicpotodo.CanvasPanel;
 import net.alexhicks.psychicpotodo.ClientStart;
 import net.alexhicks.psychicpotodo.Constants;
 import net.alexhicks.psychicpotodo.Vector2;
+import net.alexhicks.psychicpotodo.events.CanvasDrawObject;
 import net.alexhicks.psychicpotodo.events.CanvasEventListener;
 import net.alexhicks.psychicpotodo.events.Event;
 import net.alexhicks.psychicpotodo.events.MouseEvent;
@@ -25,8 +27,10 @@ public class PencilTool implements CanvasEventListener {
 	private HashMap<String, List<Vector2>> currentNetworkPoints;
 	private List<List<Vector2>> segments;
 	private boolean isJustFinalized;
+	private CanvasPanel panel;
 
-	public PencilTool() {
+	public PencilTool(CanvasPanel panel) {
+		this.panel = panel;
 		this.currentPoints = new ArrayList<>();
 		this.currentNetworkPoints = new HashMap<>();
 		this.segments = new ArrayList<>();
@@ -61,9 +65,21 @@ public class PencilTool implements CanvasEventListener {
 		}
 		return true;
 	}
+	
+	@Override
+	public boolean isCurrentlyDrawing() {
+		return this.currentPoints.size() > 0;
+	}
+	
+	@Override
+	public void renderCurrent(Graphics2D g) {
+		if (this.isCurrentlyDrawing()) {
+			this.renderSegment(g, this.currentPoints);
+		}
+	}
 
 	@Override
-	public void render(Graphics2D g) {
+	public void render(Graphics2D g, CanvasDrawObject obj) {
 		if (this.currentPoints.size() > 0) {
 			this.renderSegment(g, this.currentPoints);
 		}
@@ -80,14 +96,6 @@ public class PencilTool implements CanvasEventListener {
 		return this.isJustFinalized;
 	}
 
-	@Override
-	public void undoLast() {
-		if (this.segments.isEmpty()) {
-			return;
-		}
-		this.segments.remove(this.segments.size() - 1);
-	}
-
 	private void renderSegment(Graphics2D g, List<Vector2> segment) {
 		if (segment.size() > 1) {
 			Vector2 lastPos = segment.get(0);
@@ -98,16 +106,6 @@ public class PencilTool implements CanvasEventListener {
 			}
 		} else {
 			g.fillRect(segment.get(0).x, segment.get(0).y, Constants.PIXEL_SIZE, Constants.PIXEL_SIZE);
-		}
-	}
-
-	@Override
-	public void add(Vector2[] coords, boolean isFinal, String uid) {
-		List<Vector2> listCoords = Arrays.asList(coords);
-		if (isFinal) {
-			this.segments.add(listCoords);
-		} else {
-			this.currentNetworkPoints.put(uid, listCoords);
 		}
 	}
 

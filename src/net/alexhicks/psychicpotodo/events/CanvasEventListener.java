@@ -12,27 +12,25 @@ public interface CanvasEventListener extends EventListener {
 
 	/**
 	 * Called every time the parent component paints/repaints.
-	 *
+	 * Called for each draw object of the tool.
 	 * @param g Graphics for painting
+	 * @param obj The object to draw
 	 */
-	public abstract void render(Graphics2D g);
+	public abstract void render(Graphics2D g, CanvasDrawObject obj);
 
 	/**
 	 * @return If the tool has just finalized a shape
 	 */
 	public abstract boolean isJustFinalized();
-
+	
 	/**
-	 * Undoes the last segment this tool made.
+	 * @return If the tool is in progress
 	 */
-	public abstract void undoLast();
-
+	public abstract boolean isCurrentlyDrawing();
+	
 	/**
-	 * Adds a segment from the server.
-	 *
-	 * @param coords The coordinates of the segment
-	 * @param isFinal If the segment is final (should be true)
-	 * @param uid The unique identifier of the segment's author
+	 * Draw the current (unfinished) object
+	 * @param g Graphics for painting
 	 */
-	public abstract void add(Vector2[] coords, boolean isFinal, String uid);
+	public abstract void renderCurrent(Graphics2D g);
 }

@@ -1,5 +1,7 @@
 package net.alexhicks.psychicpotodo.tools;
 
+import net.alexhicks.psychicpotodo.CanvasPanel;
+
 /**
  * Draws a picture of Andy Harris
  *
@@ -7,7 +9,7 @@ package net.alexhicks.psychicpotodo.tools;
  */
 public class AndyTool extends ImageTool {
 
-	public AndyTool() {
-		super("andy.png");
+	public AndyTool(CanvasPanel panel) {
+		super(panel, "andy.png");
 	}
 }

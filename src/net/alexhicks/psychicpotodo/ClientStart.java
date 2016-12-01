@@ -217,7 +217,10 @@ public class ClientStart {
 				for (int i = 0; i < tokens.length; i++) {
 					coords[i] = Vector2.fromString(tokens[i]);
 				}
-				panel.tools.get(stmt.get("tool")).add(coords, stmt.get("drawType").equals("finalShape"), stmt.get("uid")); // set up rendering for the new object
+				String selectedTool = panel.selectedTool;
+				panel.selectedTool = stmt.get("tool");
+				panel.addDrawObject(coords);
+				panel.selectedTool = selectedTool;
 				panel.repaint();
 			}
 		}

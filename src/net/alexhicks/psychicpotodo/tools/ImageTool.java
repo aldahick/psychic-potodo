@@ -5,6 +5,7 @@ import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
+import net.alexhicks.psychicpotodo.CanvasPanel;
 import net.alexhicks.psychicpotodo.Vector2;
 
 /**
@@ -16,7 +17,8 @@ public class ImageTool extends ShapeTool {
 
 	private Image image;
 
-	public ImageTool(String filename) {
+	public ImageTool(CanvasPanel panel, String filename) {
+		super(panel);
 		try {
 			this.image = ImageIO.read(new File(filename));
 		} catch (IOException ex) {

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import javax.swing.JPanel;
+import net.alexhicks.psychicpotodo.events.CanvasDrawObject;
 import net.alexhicks.psychicpotodo.events.CanvasEventListener;
 import net.alexhicks.psychicpotodo.events.key.KeyDownEvent;
 import net.alexhicks.psychicpotodo.events.key.KeyTypeEvent;
@@ -63,6 +64,11 @@ public class CanvasPanel extends JPanel {
 	 * The current tool as defined in {@link Constants}
 	 */
 	protected String selectedTool;
+	
+	/**
+	 * All draw objects
+	 */
+	protected List<CanvasDrawObject> drawObjects;
 
 	/**
 	 * The last tool used
@@ -79,19 +85,20 @@ public class CanvasPanel extends JPanel {
 	 * variables.
 	 */
 	public CanvasPanel() {
+		this.drawObjects = new ArrayList<>();
 		this.selectedTool = Constants.TOOL_PENCIL;
 		this.lastTool = "";
 		this.pixelStroke = new BasicStroke(Constants.PIXEL_SIZE);
 		this.listeners = new ArrayList<>();
 		this.listeners.add(new UndoListener(this));
 		this.tools = new HashMap<>();
-		this.tools.put(Constants.TOOL_PENCIL, new PencilTool());
-		this.tools.put(Constants.TOOL_CIRCLE, new CircleTool());
-		this.tools.put(Constants.TOOL_RECTANGLE, new RectangleTool());
-		this.tools.put(Constants.TOOL_LINE, new LineTool());
-		this.tools.put(Constants.TOOL_ALEX, new AlexTool());
-		this.tools.put(Constants.TOOL_ANDY, new AndyTool());
-		this.tools.put(Constants.TOOL_BRIAN, new BrianTool());
+		this.tools.put(Constants.TOOL_PENCIL, new PencilTool(this));
+		this.tools.put(Constants.TOOL_CIRCLE, new CircleTool(this));
+		this.tools.put(Constants.TOOL_RECTANGLE, new RectangleTool(this));
+		this.tools.put(Constants.TOOL_LINE, new LineTool(this));
+		this.tools.put(Constants.TOOL_ALEX, new AlexTool(this));
+		this.tools.put(Constants.TOOL_ANDY, new AndyTool(this));
+		this.tools.put(Constants.TOOL_BRIAN, new BrianTool(this));
 		this.mouse = new CanvasMouseListener();
 		this.key = new CanvasKeyListener();
 		this.addMouseListener(this.mouse);
@@ -136,10 +143,10 @@ public class CanvasPanel extends JPanel {
 	 * Calls the last tool's {@link CanvasEventListener#undoLast() undoLast()}
 	 */
 	public void undoLast() {
-		if (this.lastTool.isEmpty()) {
+		if (this.drawObjects.isEmpty()) {
 			return;
 		}
-		this.tools.get(this.lastTool).undoLast();
+		this.drawObjects.remove(this.drawObjects.size() - 1);
 	}
 
 	@Override
@@ -154,13 +161,29 @@ public class CanvasPanel extends JPanel {
 		Graphics2D imageGraphics = (Graphics2D) canvas.createGraphics();
 		imageGraphics.setColor(Color.BLACK);
 		imageGraphics.setStroke(this.pixelStroke);
-		for (String name : this.tools.keySet()) {
-			Graphics2D g2dCopy = (Graphics2D) imageGraphics.create();
-			this.tools.get(name).render(g2dCopy);
-			g2dCopy.dispose();
+		CanvasEventListener selectedTool = this.tools.get(this.selectedTool);
+		String lastTool = "";
+		Graphics2D imageGraphicsCopy = (Graphics2D) imageGraphics.create();
+		for (CanvasDrawObject obj : this.drawObjects) {
+			if (!lastTool.equals(obj.getType())) {
+				imageGraphicsCopy.dispose();
+				imageGraphicsCopy = (Graphics2D) imageGraphics.create();
+			}
+			this.tools.get(obj.getType()).render(imageGraphicsCopy, obj);
+		}
+		if (selectedTool.isCurrentlyDrawing()) {
+			if (!lastTool.equals(this.selectedTool)) {
+				imageGraphicsCopy.dispose();
+				imageGraphicsCopy = (Graphics2D) imageGraphics.create();
+			}
+			selectedTool.renderCurrent(imageGraphicsCopy);
 		}
 		imageGraphics.dispose();
 		g.drawImage(canvas, 0, 0, null);
+	}
+	
+	public void addDrawObject(Vector2[] coords) {
+		this.drawObjects.add(new CanvasDrawObject(this.selectedTool, coords));
 	}
 
 	/**

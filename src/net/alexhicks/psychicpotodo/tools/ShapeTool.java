@@ -2,12 +2,11 @@ package net.alexhicks.psychicpotodo.tools;
 
 import java.awt.Graphics2D;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import net.alexhicks.psychicpotodo.CanvasPanel;
 import net.alexhicks.psychicpotodo.ClientStart;
 import net.alexhicks.psychicpotodo.Vector2;
+import net.alexhicks.psychicpotodo.events.CanvasDrawObject;
 import net.alexhicks.psychicpotodo.events.CanvasEventListener;
 import net.alexhicks.psychicpotodo.events.Event;
 import net.alexhicks.psychicpotodo.events.MouseEvent;
@@ -21,15 +20,15 @@ import net.alexhicks.psychicpotodo.network.ProtocolStatement;
  */
 public abstract class ShapeTool implements CanvasEventListener {
 
-	private List<Vector2[]> shapes;
-	private HashMap<String, Vector2[]> currentNetwork;
+//	private List<Vector2[]> shapes;
+//	private HashMap<String, Vector2[]> currentNetwork;
 	private Vector2[] current;
 	private boolean isFollowing;
 	private boolean isJustFinalized;
+	private CanvasPanel panel;
 
-	public ShapeTool() {
-		this.shapes = new ArrayList<>();
-		this.currentNetwork = new HashMap<>();
+	public ShapeTool(CanvasPanel panel) {
+		this.panel = panel;
 		this.current = new Vector2[]{new Vector2(), new Vector2()};
 		this.isFollowing = false;
 		this.isJustFinalized = false;
@@ -52,7 +51,7 @@ public abstract class ShapeTool implements CanvasEventListener {
 			}
 			this.isFollowing = false;
 			this.isJustFinalized = true;
-			this.shapes.add(this.current);
+			this.panel.addDrawObject(this.current);
 			ProtocolStatement stmt = new ProtocolStatement("draw");
 			stmt.set("drawType", "finalShape");
 			stmt.set("positions", this.current);
@@ -68,7 +67,13 @@ public abstract class ShapeTool implements CanvasEventListener {
 		}
 		return true;
 	}
+	
+	@Override
+	public boolean isCurrentlyDrawing() {
+		return this.isFollowing;
+	}
 
+	/*
 	@Override
 	public void render(Graphics2D g) {
 		if (this.isFollowing) {
@@ -81,28 +86,20 @@ public abstract class ShapeTool implements CanvasEventListener {
 			this.renderObject(g, shape);
 		}
 	}
+	*/
+	@Override
+	public void render(Graphics2D g, CanvasDrawObject obj) {
+		this.renderObject(g, obj.getCoords());
+	}
+	
+	@Override
+	public void renderCurrent(Graphics2D g) {
+		this.renderObject(g, this.current);
+	}
 
 	@Override
 	public boolean isJustFinalized() {
 		return this.isJustFinalized;
-	}
-
-	@Override
-	public void undoLast() {
-		if (this.shapes.isEmpty()) {
-			return;
-		}
-		this.shapes.remove(this.shapes.size() - 1);
-	}
-
-	@Override
-	public void add(Vector2[] coords, boolean isFinal, String uid) {
-		System.out.println("Adding " + Arrays.toString(coords) + " to a shape from UID " + uid);
-		if (isFinal) {
-			this.shapes.add(coords);
-		} else {
-			this.currentNetwork.put(uid, coords);
-		}
 	}
 
 	protected abstract void renderObject(Graphics2D g, Vector2[] coords);
