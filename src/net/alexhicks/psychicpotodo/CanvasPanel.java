@@ -14,9 +14,14 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
 import javax.swing.JPanel;
 import net.alexhicks.psychicpotodo.events.CanvasDrawObject;
 import net.alexhicks.psychicpotodo.events.CanvasEventListener;
@@ -30,6 +35,7 @@ import net.alexhicks.psychicpotodo.events.mouse.MouseExitEvent;
 import net.alexhicks.psychicpotodo.events.mouse.MouseMoveEvent;
 import net.alexhicks.psychicpotodo.events.mouse.MouseUpEvent;
 import net.alexhicks.psychicpotodo.listeners.UndoListener;
+import net.alexhicks.psychicpotodo.timers.ClientRenderTask;
 import net.alexhicks.psychicpotodo.tools.AlexTool;
 import net.alexhicks.psychicpotodo.tools.AndyTool;
 import net.alexhicks.psychicpotodo.tools.BrianTool;
@@ -79,6 +85,8 @@ public class CanvasPanel extends JPanel {
 	 * A buffer between tools and the parent JPanel. Used for saving images.
 	 */
 	public BufferedImage canvas;
+	
+	private Timer renderTimer;
 
 	/**
 	 * Populates {@link CanvasPanel#tools} along with the other instance
@@ -104,6 +112,8 @@ public class CanvasPanel extends JPanel {
 		this.addMouseListener(this.mouse);
 		this.addMouseMotionListener(this.mouse);
 		this.addKeyListener(this.key);
+		this.renderTimer = new Timer();
+		this.renderTimer.schedule(new ClientRenderTask(), 0, 500);
 	}
 
 	/**
@@ -148,6 +158,10 @@ public class CanvasPanel extends JPanel {
 		}
 		this.drawObjects.remove(this.drawObjects.size() - 1);
 	}
+	
+	public void clear() {
+		this.drawObjects.clear();
+	}
 
 	@Override
 	public Dimension getPreferredSize() {
@@ -164,12 +178,16 @@ public class CanvasPanel extends JPanel {
 		CanvasEventListener selectedTool = this.tools.get(this.selectedTool);
 		String lastTool = "";
 		Graphics2D imageGraphicsCopy = (Graphics2D) imageGraphics.create();
-		for (CanvasDrawObject obj : this.drawObjects) {
-			if (!lastTool.equals(obj.getType())) {
-				imageGraphicsCopy.dispose();
-				imageGraphicsCopy = (Graphics2D) imageGraphics.create();
+		try {
+			for (CanvasDrawObject obj : this.drawObjects) {
+				if (!lastTool.equals(obj.getType())) {
+					imageGraphicsCopy.dispose();
+					imageGraphicsCopy = (Graphics2D) imageGraphics.create();
+				}
+				this.tools.get(obj.getType()).render(imageGraphicsCopy, obj);
 			}
-			this.tools.get(obj.getType()).render(imageGraphicsCopy, obj);
+		} catch (ConcurrentModificationException ex) {
+			// do nothing, it doesn't matter
 		}
 		if (selectedTool.isCurrentlyDrawing()) {
 			if (!lastTool.equals(this.selectedTool)) {
@@ -177,6 +195,15 @@ public class CanvasPanel extends JPanel {
 				imageGraphicsCopy = (Graphics2D) imageGraphics.create();
 			}
 			selectedTool.renderCurrent(imageGraphicsCopy);
+		}
+		if (ClientStart.clearTask != null) {
+			long lastClearTime = ClientStart.clearTask.scheduledExecutionTime();
+			long timeUntilClear = Constants.CLEAR_DELAY - (System.currentTimeMillis() - lastClearTime);
+			if (timeUntilClear < (60 * 1000)) {
+				DateFormat formatter = new SimpleDateFormat("mm:ss");
+				String timeLeft = formatter.format(new Date(timeUntilClear));
+				imageGraphics.drawString("Time until clear: " + timeLeft, 30, 30);
+			}
 		}
 		imageGraphics.dispose();
 		g.drawImage(canvas, 0, 0, null);

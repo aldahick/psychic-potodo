@@ -38,6 +38,10 @@ public class ProtocolStatement {
 	public void set(String name, int value) {
 		this.set(name, Integer.toString(value));
 	}
+	
+	public void set(String name, long value) {
+		this.set(name, Long.toString(value));
+	}
 
 	public void set(String name, Object[] values) {
 		String[] strValues = new String[values.length];

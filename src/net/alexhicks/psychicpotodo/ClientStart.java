@@ -10,10 +10,12 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Timer;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import net.alexhicks.psychicpotodo.timers.ClientClearTask;
 import net.alexhicks.psychicpotodo.network.NetworkClient;
 import net.alexhicks.psychicpotodo.network.ProtocolStatement;
 
@@ -61,6 +63,8 @@ public class ClientStart {
 		Constants.TOOL_ANDY,
 		Constants.TOOL_BRIAN
 	};
+	
+	public static ClientClearTask clearTask;
 
 	public static void main(String[] args) {
 		// closes the socket in case the program ends unexpectedly
@@ -202,7 +206,13 @@ public class ClientStart {
 	}
 
 	private static class ClientDataListener implements Runnable {
-
+		
+		private Timer clearTimer;
+		
+		public ClientDataListener() {
+			this.clearTimer = new Timer();
+		}
+		
 		@Override
 		public void run() {
 			while (true) {
@@ -210,6 +220,14 @@ public class ClientStart {
 				if (stmt == null) {
 					System.err.println("Bad value received from network!");
 					return;
+				}
+				if (stmt.getAction().equals("lastCleared")) {
+					System.out.println(stmt.toString());
+					long lastClearTime = Long.parseLong(stmt.get("millis"));
+					long delay = Math.abs(lastClearTime - System.currentTimeMillis());
+					ClientStart.clearTask = new ClientClearTask(ClientStart.panel);
+					this.clearTimer.schedule(ClientStart.clearTask, delay, Constants.CLEAR_DELAY);
+					continue;
 				}
 				String positions = stmt.get("positions"); // every message from server to client should have a positions attribute
 				String[] tokens = positions.split("###");

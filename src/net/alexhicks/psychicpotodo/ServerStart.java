@@ -43,7 +43,7 @@ public class ServerStart {
 				clientThreads.add(thread);
 				thread.start();
 			}
-			server.close(); // close server if this should ever stop
+			server.close(); // close server if this loop ever ends
 		} catch (IOException ex) {
 			System.err.println("Server error in main(): " + ex.getLocalizedMessage());
 		}

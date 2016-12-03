@@ -6,7 +6,13 @@ package net.alexhicks.psychicpotodo;
  * @author Alex
  */
 public class Constants {
-
+	
+	/**
+	 * Time between canvas clears in milliseconds
+	 */
+//	public static final long CLEAR_DELAY = 1000 * 60 * 30;
+	public static final long CLEAR_DELAY = 1000 * 10;
+	
 	/**
 	 * The default line size for {@link CanvasPanel}
 	 */
